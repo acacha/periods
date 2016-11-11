@@ -7,8 +7,8 @@
 [![Quality Score][ico-code-quality]][link-code-quality]
 [![Total Downloads][ico-downloads]][link-downloads]
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what
-PSRs you support to avoid any confusion with users and contributors.
+Laravel 5 packages to support multiple database connections for 
+historical data (One period -> One database connection)
 
 ## Install
 
@@ -18,11 +18,98 @@ Via Composer
 $ composer require acacha/periods
 ```
 
+Add **PeriodsServiceProvider** service provider to **config/app.php** file:
+
+```php
+...
+ /*
+         * Package Service Providers...
+         */
+        Acacha\Periods\Providers\PeriodsServiceProvider::class,
+...
+```
+
+Publish files with:
+
+```php
+php artisan vendor:publish --tag=acacha_periods
+``` 
+
 ## Usage
 
+Register Laravel Middleware on class **App\Http\Kernel.php** at the end
+of web middleware group:
+
 ``` php
-$skeleton = new Acacha\Periods();
-echo $skeleton->echoPhrase('Hello, League!');
+...
+ protected $middlewareGroups = [
+        'web' => [
+            ...
+            \Acacha\Periods\Middleware\Periods::class
+        ],
+...
+```
+
+Customize your config. First adapt to your needs fil **config/periods.php**:
+
+```php
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session variable name for periods
+    |--------------------------------------------------------------------------
+    |
+    | This value is the name of the session vairable that storages desired period.
+    */
+
+    'session_variable' => 'ACACHA_PERIOD',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Valid period values and related database connections
+    |--------------------------------------------------------------------------
+    |
+    | This value is an array that stores valid period values and his related
+    | database connections.
+    */
+
+    'periods' => [
+        '2016-17' => env('DB_CONNECTION', 'mysql'),
+        '2015-16' => env('DB_CONNECTION', 'mysql') . '_1516',
+        '2014-15' => env('DB_CONNECTION', 'mysql') . '_1415',
+    ],
+
+];
+```
+
+By sure that you have multiple database connections 
+(default sqlite, sqlite_1516, sqlite_1415...) at config file **config/database.php**:
+
+```php
+...
+    'connections' => [
+
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'prefix' => '',
+        ],
+
+        'sqlite_1516' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_DATABASE', database_path('database1516.sqlite')),
+            'prefix' => '',
+        ],
+
+        'sqlite_1415' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_DATABASE', database_path('database1415.sqlite')),
+            'prefix' => '',
+        ],
+...
 ```
 
 ## Change log
